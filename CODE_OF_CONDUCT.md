@@ -134,3 +134,14 @@ For answers to common questions about this code of conduct, see the FAQ at
 [Mozilla CoC]: https://github.com/mozilla/diversity
 [FAQ]: https://www.contributor-covenant.org/faq
 [translations]: https://www.contributor-covenant.org/translations
+
+
+---
+
+## License and Credits (PrismLauncher+Horizon-crack licensing and credits)
+
+This project is licensed under the GNU General Public License v3.0 (GPL-3.0-only).
+
+Modified and extended by artemspt.
+
+Horizon integration is based on Horizon by Ludovic Marie (Horizon authors / horizon-rust/horizon contributors).

@@ -102,6 +102,20 @@ set(CORE_SOURCES
 
     # Assertion helper
     AssertHelpers.h
+
+    # Horizon versions
+    horizon/HorizonVersion.h
+    horizon/HorizonVersion.cpp
+    horizon/HorizonVersionList.h
+    horizon/HorizonVersionList.cpp
+    horizon/HorizonLaunchStep.h
+    horizon/HorizonLaunchStep.cpp
+    horizon/HorizonCreationTask.h
+    horizon/HorizonCreationTask.cpp
+    horizon/HorizonPage.h
+    horizon/HorizonPage.cpp
+    horizon/HorizonInstallTask.h
+    horizon/HorizonInstallTask.cpp
 )
 if (UNIX AND NOT CYGWIN AND NOT APPLE)
     set(CORE_SOURCES

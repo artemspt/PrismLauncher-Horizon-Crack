@@ -53,7 +53,7 @@ class CustomPage : public QWidget, public BasePage {
    public:
     explicit CustomPage(NewInstanceDialog* dialog, QWidget* parent = 0);
     virtual ~CustomPage();
-    virtual QString displayName() const override { return tr("Custom"); }
+    virtual QString displayName() const override { return tr("Minecraft"); }
     virtual QIcon icon() const override { return QIcon::fromTheme("minecraft"); }
     virtual QString id() const override { return "vanilla"; }
     virtual QString helpPage() const override { return "Vanilla-platform"; }

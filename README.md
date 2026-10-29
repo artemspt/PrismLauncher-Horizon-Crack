@@ -14,3 +14,14 @@ Get the latest release from the [**Releases Page**](https://github.com/Diegiwg/P
 
 > [!WARNING]
 > DO NOT use official Microsoft/Mojang accounts with this launcher. This bypasses authentication and is intended for offline play only. Using with official servers may violate Minecraft's Terms of Service.
+
+
+---
+
+## License and Credits (PrismLauncher+Horizon-crack licensing and credits)
+
+This project is licensed under the GNU General Public License v3.0 (GPL-3.0-only).
+
+Modified and extended by artemspt.
+
+Horizon integration is based on Horizon by Ludovic Marie (Horizon authors / horizon-rust/horizon contributors).

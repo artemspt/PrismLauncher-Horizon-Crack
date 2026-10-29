@@ -58,6 +58,7 @@
 #include <utility>
 
 #include "ui/pages/modplatform/CustomPage.h"
+#include "horizon/HorizonPage.h"
 #include "ui/pages/modplatform/ImportPage.h"
 #include "ui/pages/modplatform/atlauncher/AtlPage.h"
 #include "ui/pages/modplatform/flame/FlamePage.h"
@@ -183,6 +184,7 @@ QList<BasePage*> NewInstanceDialog::getPages()
     pages.append(new FTBImportAPP::ImportFTBPage(this));
     pages.append(new ModrinthPage(this));
     pages.append(new TechnicPage(this));
+    pages.append(new HorizonPage(this));
 
     return pages;
 }

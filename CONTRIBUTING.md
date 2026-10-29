@@ -163,3 +163,14 @@ As a bonus, you can also [cryptographically sign your commits][gh-signing-commit
 We use [automated backports](https://github.com/PrismLauncher/PrismLauncher/blob/develop/.github/workflows/backport.yml) to merge specific contributions from develop into `release` branches.
 
 This is done when pull requests are merged and have labels such as `backport release-7.x` - which should be added along with the milestone for the release.
+
+
+---
+
+## License and Credits (PrismLauncher+Horizon-crack licensing and credits)
+
+This project is licensed under the GNU General Public License v3.0 (GPL-3.0-only).
+
+Modified and extended by artemspt.
+
+Horizon integration is based on Horizon by Ludovic Marie (Horizon authors / horizon-rust/horizon contributors).
