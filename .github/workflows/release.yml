@@ -15,8 +15,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: windows-2022
-            artifact: windows-x86_64
+          - os: ubuntu-24.04-arm
+            artifact: linux-aarch64
     runs-on: ${{ matrix.os }}
     continue-on-error: true
     env:
@@ -123,6 +123,12 @@ jobs:
         run: cmake --build build --target prismlauncher --config Release
         shell: pwsh
 
+      - name: Download appimagetool (Linux ARM64)
+        if: runner.os == 'Linux' && runner.arch == 'ARM64'
+        run: |
+          curl -L -o /tmp/appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-aarch64.AppImage
+          chmod +x /tmp/appimagetool
+
       - name: Package (Windows)
         if: runner.os == 'Windows'
         run: |
@@ -145,7 +151,20 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist
-          if [ "$RUNNER_OS" = "Linux" ]; then
+          if [ "$RUNNER_OS" = "Linux" ] && [ "$(uname -m)" = "aarch64" ]; then
+            cp build/prismlauncher dist/prismlauncher-linux-aarch64
+            chmod +x dist/prismlauncher-linux-aarch64
+            tar -czf dist/prismlauncher-linux-aarch64.tar.gz -C dist prismlauncher-linux-aarch64
+            rm -rf appdir && mkdir -p appdir/usr/bin && cp build/prismlauncher appdir/usr/bin/prismlauncher && chmod +x appdir/usr/bin/prismlauncher
+            ln -s usr/bin/prismlauncher appdir/AppRun
+            printf '%s
+' '[Desktop Entry]' 'Name=Prism Launcher Horizon' 'Exec=prismlauncher' 'Icon=prismlauncher' 'Type=Application' 'Categories=Game;' > appdir/prismlauncher.desktop
+            printf 'PNG
+
+' > appdir/prismlauncher.png || true
+            ARCH=aarch64 /tmp/appimagetool appdir dist/PrismLauncher-Horizon-aarch64.AppImage
+            (cd dist && sha256sum prismlauncher-linux-aarch64 prismlauncher-linux-aarch64.tar.gz PrismLauncher-Horizon-aarch64.AppImage > SHA256SUMS)
+          elif [ "$RUNNER_OS" = "Linux" ]; then
             cp build/prismlauncher dist/prismlauncher-linux-x86_64
             chmod +x dist/prismlauncher-linux-x86_64
             tar -czf dist/prismlauncher-linux-x86_64.tar.gz -C dist prismlauncher-linux-x86_64
