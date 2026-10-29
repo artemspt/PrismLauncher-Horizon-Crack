@@ -77,7 +77,7 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           python -m pip install aqtinstall
-          aqt install-qt windows desktop 6.8.3 win64_msvc2022_64 -O C:\Qt
+          aqt install-qt windows desktop 6.8.3 win64_msvc2022_64 -O C:\Qt -m qtnetworkauth
         shell: pwsh
 
       - name: Install vcpkg dependencies (Windows only)
