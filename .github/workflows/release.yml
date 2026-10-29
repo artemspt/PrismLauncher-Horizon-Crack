@@ -22,6 +22,7 @@ jobs:
           - os: windows-latest
             artifact: windows-x86_64
     runs-on: ${{ matrix.os }}
+    continue-on-error: true
     env:
       APP_NAME: PrismLauncher-Horizon
     steps:
