@@ -10,6 +10,11 @@
     },
 
     {
+      "name": "libqrencode",
+      "default-features": false
+    },
+
+    {
       "name": "libarchive",
       "default-features": false,
       "features": [
