@@ -139,6 +139,11 @@ jobs:
           Pop-Location
         shell: pwsh
 
+      - name: Build (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: cmake --build build --target prismlauncher -j2
+
       - name: Package
         shell: bash
         run: |
