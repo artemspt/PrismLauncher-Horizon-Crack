@@ -1,0 +1,105 @@
+name: Build ARM64 Linux
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            cmake \
+            ninja-build \
+            pkg-config \
+            extra-cmake-modules \
+            libarchive-dev \
+            libqrencode-dev \
+            gamemode-dev \
+            libtomlplusplus-dev \
+            libcmark-dev \
+            cmark \
+            zlib1g-dev \
+            qt6-base-dev \
+            qt6-base-dev-tools \
+            qt6-networkauth-dev \
+            qt6-tools-dev \
+            qt6-tools-dev-tools \
+            qt6-declarative-dev \
+            libgl1-mesa-dev \
+            libx11-dev \
+            libxkbcommon-dev \
+            libxrandr-dev \
+            libxi-dev \
+            libxcb1-dev \
+            curl \
+            file
+
+      - name: Configure
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="/usr" \
+            -DLAUNCHER_QT_VERSION_MAJOR=6 \
+            -DLAUNCHER_BUILD_PLATFORM=linux-aarch64
+
+      - name: Build
+        run: cmake --build build --target prismlauncher -j2
+
+      - name: Download appimagetool
+        run: |
+          curl -L -o /tmp/appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-aarch64.AppImage
+          chmod +x /tmp/appimagetool
+          /tmp/appimagetool --version
+
+      - name: Package
+        run: |
+          mkdir -p dist
+          cp build/prismlauncher dist/prismlauncher-linux-aarch64
+          chmod +x dist/prismlauncher-linux-aarch64
+          tar -czf dist/prismlauncher-linux-aarch64.tar.gz -C dist prismlauncher-linux-aarch64
+
+          rm -rf appdir && mkdir -p appdir/usr/bin
+          cp build/prismlauncher appdir/usr/bin/prismlauncher
+          chmod +x appdir/usr/bin/prismlauncher
+          ln -s usr/bin/prismlauncher appdir/AppRun
+          printf '%s\n' '[Desktop Entry]' 'Name=Prism Launcher Horizon' 'Exec=prismlauncher' 'Icon=prismlauncher' 'Type=Application' 'Categories=Game;' > appdir/prismlauncher.desktop
+          python3 -c "import base64; open('appdir/prismlauncher.png','wb').write(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIW2P4z8DwHwAFpAFpnqNfFgAAAABJRU5ErkJggg=='))"
+          ARCH=aarch64 /tmp/appimagetool appdir dist/PrismLauncher-Horizon-aarch64.AppImage
+
+          (cd dist && sha256sum prismlauncher-linux-aarch64 prismlauncher-linux-aarch64.tar.gz PrismLauncher-Horizon-aarch64.AppImage > SHA256SUMS)
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: prismlauncher-linux-aarch64
+          path: dist/*
+          if-no-files-found: warn
+
+      - name: Publish to GitHub release if running on a tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          gh release upload "${GITHUB_REF_NAME}" dist/* --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
