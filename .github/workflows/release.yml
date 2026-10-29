@@ -73,19 +73,21 @@ jobs:
         run: |
           brew install cmake ninja extra-cmake-modules qt@6 libarchive qrencode cmark tomlplusplus
 
-      - name: Install Qt (Windows only)
+      - name: Setup MSYS2 (Windows only)
         if: runner.os == 'Windows'
-        run: |
-          python -m pip install aqtinstall
-          aqt install-qt windows desktop 6.8.3 win64_msvc2022_64 -O C:\Qt -m qtnetworkauth
-        shell: pwsh
-
-      - name: Install vcpkg dependencies (Windows only)
-        if: runner.os == 'Windows'
-        run: |
-          $env:VCPKG_ROOT = 'C:\vcpkg'
-          & "$env:VCPKG_ROOT\vcpkg.exe" install --triplet x64-windows
-        shell: pwsh
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-ninja
+            mingw-w64-x86_64-qt6
+            mingw-w64-x86_64-libarchive
+            mingw-w64-x86_64-tomlplusplus
+            mingw-w64-x86_64-qrencode
+            mingw-w64-x86_64-zlib
 
       - name: Configure (Linux/macOS)
         if: runner.os != 'Windows'
@@ -108,67 +110,27 @@ jobs:
 
       - name: Configure (Windows)
         if: runner.os == 'Windows'
+        shell: msys2 {0}
         run: |
-          cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
-            -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_PREFIX_PATH="C:/Qt/6.8.3/msvc2022_64" `
-            -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake" `
-            -DVCPKG_TARGET_TRIPLET=x64-windows `
-            -DLAUNCHER_QT_VERSION_MAJOR=6 `
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="C:/msys64/mingw64" \
+            -DLAUNCHER_QT_VERSION_MAJOR=6 \
             -DLAUNCHER_BUILD_PLATFORM=windows-x86_64
-        shell: pwsh
-
-      - name: Build (Linux/macOS)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: cmake --build build --target prismlauncher -j2
 
       - name: Build (Windows)
         if: runner.os == 'Windows'
-        run: cmake --build build --target prismlauncher --config Release
-        shell: pwsh
-
-      - name: Package (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          mkdir -p dist
-          cp build/prismlauncher dist/prismlauncher-linux-x86_64
-          chmod +x dist/prismlauncher-linux-x86_64
-          tar -czf dist/prismlauncher-linux-x86_64.tar.gz -C dist prismlauncher-linux-x86_64
-          sha256sum dist/prismlauncher-linux-x86_64 dist/prismlauncher-linux-x86_64.tar.gz > dist/SHA256SUMS
-
-      - name: Package (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          mkdir -p dist
-          cp build/prismlauncher dist/prismlauncher-macos
-          chmod +x dist/prismlauncher-macos
-          /opt/homebrew/opt/qt@6/bin/macdeployqt dist/prismlauncher-macos 2>/dev/null || true
-          tar -czf dist/prismlauncher-macos.tar.gz -C dist prismlauncher-macos
-          sha256sum dist/prismlauncher-macos dist/prismlauncher-macos.tar.gz > dist/SHA256SUMS
+        shell: msys2 {0}
+        run: cmake --build build --target prismlauncher -j2
 
       - name: Package (Windows)
         if: runner.os == 'Windows'
+        shell: msys2 {0}
         run: |
-          $dist = "$env:GITHUB_WORKSPACE\dist"
-          New-Item -ItemType Directory -Force -Path $dist | Out-Null
-          Copy-Item build\Release\prismlauncher.exe "$dist\prismlauncher-windows-x86_64.exe"
-          & "C:\Qt\6.8.3\msvc2022_64\bin\windeployqt.exe" "$dist\prismlauncher-windows-x86_64.exe" 2>$null
-          Compress-Archive -Path "$dist\prismlauncher-windows-x86_64.exe","$dist\*.dll" -DestinationPath "$dist\prismlauncher-windows-x86_64.zip" -Force
-          cd $dist
-          sha256sum prismlauncher-windows-x86_64.exe > SHA256SUMS
-        shell: pwsh
-
-      - name: Publish Linux bundle release directly
-        if: runner.os == 'Linux' && startsWith(github.ref, 'refs/tags/')
-        run: |
-          gh release upload "${GITHUB_REF_NAME}" \
-            dist/prismlauncher-linux-x86_64 \
-            dist/prismlauncher-linux-x86_64.tar.gz \
-            dist/SHA256SUMS \
-            --clobber
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          mkdir -p dist
+          cp build/prismlauncher.exe dist/prismlauncher-windows-x86_64.exe
+          zip -j dist/prismlauncher-windows-x86_64.zip dist/prismlauncher-windows-x86_64.exe
+          sha256sum dist/prismlauncher-windows-x86_64.exe > dist/SHA256SUMS
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
