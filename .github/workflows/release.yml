@@ -139,6 +139,26 @@ jobs:
           Pop-Location
         shell: pwsh
 
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p dist
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            cp build/prismlauncher dist/prismlauncher-linux-x86_64
+            chmod +x dist/prismlauncher-linux-x86_64
+            tar -czf dist/prismlauncher-linux-x86_64.tar.gz -C dist prismlauncher-linux-x86_64
+            (cd dist && sha256sum prismlauncher-linux-x86_64 prismlauncher-linux-x86_64.tar.gz > SHA256SUMS)
+          elif [ "$RUNNER_OS" = "macOS" ]; then
+            cp build/prismlauncher dist/prismlauncher-macos
+            chmod +x dist/prismlauncher-macos
+            tar -czf dist/prismlauncher-macos.tar.gz -C dist prismlauncher-macos
+            (cd dist && sha256sum prismlauncher-macos prismlauncher-macos.tar.gz > SHA256SUMS)
+          else
+            cp build/prismlauncher.exe dist/prismlauncher-windows-x86_64.exe
+            (cd dist && zip -j prismlauncher-windows-x86_64.zip prismlauncher-windows-x86_64.exe)
+            (cd dist && sha256sum prismlauncher-windows-x86_64.exe > SHA256SUMS)
+          fi
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
