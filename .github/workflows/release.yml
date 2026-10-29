@@ -127,7 +127,7 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           New-Item -ItemType Directory -Force -Path dist | Out-Null
-          Copy-Item build\Release\prismlauncher.exe dist\prismlauncher-windows-x86_64.exe
+          Copy-Item build\prismlauncher.exe dist\prismlauncher-windows-x86_64.exe
           Compress-Archive -Path dist\prismlauncher-windows-x86_64.exe -DestinationPath dist\prismlauncher-windows-x86_64.zip -Force
           Push-Location dist
           $hash = (Get-FileHash prismlauncher-windows-x86_64.exe -Algorithm SHA256).Hash
