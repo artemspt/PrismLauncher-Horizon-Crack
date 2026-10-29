@@ -61,7 +61,7 @@ jobs:
             extra-cmake-modules \
             libarchive-dev \
             libqrencode-dev \
-            libgamemode-dev \
+            gamemode-dev \
             libtomlplusplus-dev \
             libcmark-dev \
             zlib1g-dev \
