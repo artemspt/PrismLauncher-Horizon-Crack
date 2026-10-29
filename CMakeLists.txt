@@ -321,7 +321,7 @@ find_package(cmark REQUIRED)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     find_package(PkgConfig REQUIRED)
-    pkg_check_modules(gamemode REQUIRED IMPORTED_TARGET gamemode)
+    pkg_check_modules(gamemode IMPORTED_TARGET gamemode)
 endif()
 
 # Find libqrencode
