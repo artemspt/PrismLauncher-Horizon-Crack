@@ -19,7 +19,7 @@ jobs:
             artifact: linux-x86_64
           - os: macos-latest
             artifact: macos
-          - os: windows-latest
+          - os: windows-2022
             artifact: windows-x86_64
     runs-on: ${{ matrix.os }}
     continue-on-error: true
@@ -158,6 +158,17 @@ jobs:
           cd $dist
           sha256sum prismlauncher-windows-x86_64.exe > SHA256SUMS
         shell: pwsh
+
+      - name: Publish Linux bundle release directly
+        if: runner.os == 'Linux' && startsWith(github.ref, 'refs/tags/')
+        run: |
+          gh release upload "${GITHUB_REF_NAME}" \
+            dist/prismlauncher-linux-x86_64 \
+            dist/prismlauncher-linux-x86_64.tar.gz \
+            dist/SHA256SUMS \
+            --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
