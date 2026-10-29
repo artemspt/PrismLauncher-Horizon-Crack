@@ -140,7 +140,8 @@ jobs:
         shell: bash
         run: cmake --build build --target prismlauncher -j2
 
-      - name: Package
+      - name: Package (Linux/macOS)
+        if: runner.os != 'Windows'
         shell: bash
         run: |
           mkdir -p dist
