@@ -208,16 +208,16 @@ void HorizonInstallTask::downloadFinished()
         const QString serverJar = downloadServerJar(minecraftDir);
         if (!serverJar.isEmpty()) {
             setStatus(tr("Preparing Horizon resources..."));
-            QProcess proc;
-            proc.setWorkingDirectory(m_targetDir);
-            proc.setProgram(prepareBin);
-            proc.setArguments({ "--prepare", "--minecraft-dir", minecraftDir, "--server-jar", serverJar });
-            proc.setProcessEnvironment(QProcessEnvironment::systemEnvironment());
-            proc.start();
-            if (proc.waitForFinished(10 * 60 * 1000) && proc.exitCode() == 0 && QDir(resourcesPath).exists()) {
+            QProcess prepareProc;
+            prepareProc.setWorkingDirectory(m_targetDir);
+            prepareProc.setProgram(prepareBin);
+            prepareProc.setArguments({ "--prepare", "--minecraft-dir", minecraftDir, "--server-jar", serverJar });
+            prepareProc.setProcessEnvironment(QProcessEnvironment::systemEnvironment());
+            prepareProc.start();
+            if (prepareProc.waitForFinished(10 * 60 * 1000) && prepareProc.exitCode() == 0 && QDir(resourcesPath).exists()) {
                 m_instance->settings()->set("HorizonResourcesPath", resourcesPath);
             } else {
-                qWarning() << "Horizon prepare failed:" << proc.readAllStandardError();
+                qWarning() << "Horizon prepare failed:" << prepareProc.readAllStandardError();
             }
         }
     }
