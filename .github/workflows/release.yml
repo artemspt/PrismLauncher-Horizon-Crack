@@ -10,8 +10,27 @@ permissions:
   contents: write
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-latest
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: linux-x86_64
+            qt_arch: linux desktop 6.8.3 gcc_64
+            qt_root: /opt/Qt/6.8.3/gcc_64
+          - os: macos-latest
+            artifact: macos
+            qt_arch: mac desktop 6.8.3 clang_64
+            qt_root: /opt/Qt/6.8.3/macos
+          - os: windows-latest
+            artifact: windows-x86_64
+            qt_arch: windows desktop 6.8.3 win64_msvc2022_64
+            qt_root: C:\Qt\6.8.3\msvc2022_64
+    runs-on: ${{ matrix.os }}
+    env:
+      QT_ROOT: ${{ matrix.qt_root }}
+      APP_NAME: PrismLauncher-Horizon
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,7 +43,14 @@ jobs:
           distribution: temurin
           java-version: "25"
 
-      - name: Install dependencies
+      - name: Cache Qt
+        uses: actions/cache@v4
+        with:
+          path: ${{ matrix.qt_root }}
+          key: ${{ runner.os }}-qt-6.8.3-${{ hashFiles('.github/workflows/release.yml') }}
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
@@ -39,25 +65,60 @@ jobs:
             libtomlplusplus-dev \
             libcmark-dev \
             zlib1g-dev \
-            qt6-base-dev \
-            qt6-base-dev-tools \
-            qt6-networkauth-dev \
-            qt6-tools-dev \
-            qt6-tools-dev-tools \
-            qt6-declarative-dev
+            python3-pip \
+            libgl1-mesa-dev \
+            libx11-dev \
+            libxkbcommon-dev \
+            libxrandr-dev \
+            libxi-dev \
+            libxcb1-dev
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install cmake ninja extra-cmake-modules libarchive qrencode cmark tomlplusplus
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: choco install -y cmake ninja 2>$null || true
+
+      - name: Install Qt
+        shell: bash
+        run: |
+          python -m pip install aqtinstall
+          aqt install-qt ${{ matrix.qt_arch }} -O $(dirname "${{ matrix.qt_root }}")
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            aqt install-qt ${{ matrix.qt_arch }} -O 'C:\Qt'
+          fi
 
       - name: Configure
+        shell: bash
         run: |
-          cmake -S . -B build -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_PREFIX_PATH=/usr \
-            -DCMAKE_INSTALL_PREFIX=/usr \
-            -DLAUNCHER_QT_VERSION_MAJOR=6
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            cmake -S . -B build -G Ninja \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_PREFIX_PATH="/usr;$QT_ROOT" \
+              -DLAUNCHER_QT_VERSION_MAJOR=6 \
+              -DLAUNCHER_BUILD_PLATFORM=linux-x86_64
+          elif [ "$RUNNER_OS" = "macOS" ]; then
+            cmake -S . -B build -G Ninja \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_PREFIX_PATH="$QT_ROOT;/opt/homebrew" \
+              -DLAUNCHER_QT_VERSION_MAJOR=6 \
+              -DLAUNCHER_BUILD_PLATFORM=macos
+          else
+            cmake -S . -B build -G "Visual Studio 17 2022" -A x64 \
+              -DCMAKE_PREFIX_PATH="C:/Qt/6.8.3/msvc2022_64" \
+              -DLAUNCHER_QT_VERSION_MAJOR=6 \
+              -DLAUNCHER_BUILD_PLATFORM=windows-x86_64
+          fi
 
       - name: Build
+        shell: bash
         run: cmake --build build --target prismlauncher -j2
 
-      - name: Package
+      - name: Package (Linux)
+        if: runner.os == 'Linux'
         run: |
           mkdir -p dist
           cp build/prismlauncher dist/prismlauncher-linux-x86_64
@@ -65,24 +126,49 @@ jobs:
           tar -czf dist/prismlauncher-linux-x86_64.tar.gz -C dist prismlauncher-linux-x86_64
           sha256sum dist/prismlauncher-linux-x86_64 dist/prismlauncher-linux-x86_64.tar.gz > dist/SHA256SUMS
 
+      - name: Package (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p dist
+          cp build/prismlauncher dist/prismlauncher-macos
+          chmod +x dist/prismlauncher-macos
+          /opt/Qt/6.8.3/macos/bin/macdeployqt dist/prismlauncher-macos -hardened 2>/dev/null || true
+          tar -czf dist/prismlauncher-macos.tar.gz -C dist prismlauncher-macos
+          sha256sum dist/prismlauncher-macos dist/prismlauncher-macos.tar.gz > dist/SHA256SUMS
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp build/prismlauncher.exe dist/prismlauncher-windows-x86_64.exe
+          windeployqt dist/prismlauncher-windows-x86_64.exe || true
+          (cd dist && zip -r prismlauncher-windows-x86_64.zip .)
+          sha256sum dist/prismlauncher-windows-x86_64.exe > dist/SHA256SUMS
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: prismlauncher-${{ matrix.artifact }}
+          path: dist/*
+          if-no-files-found: warn
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
       - name: Upload release assets
-        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/prismlauncher-linux-x86_64
-            dist/prismlauncher-linux-x86_64.tar.gz
-            dist/SHA256SUMS
+            dist/**
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload workflow artifact
-        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: prismlauncher-linux-x86_64
-          path: |
-            dist/prismlauncher-linux-x86_64
-            dist/prismlauncher-linux-x86_64.tar.gz
-            dist/SHA256SUMS
