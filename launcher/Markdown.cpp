@@ -20,6 +20,7 @@
 
 QString markdownToHTML(const QString& markdown)
 {
+#ifdef HAVE_CMARK
     const QByteArray markdownData = markdown.toUtf8();
     char* buffer = cmark_markdown_to_html(markdownData.constData(), markdownData.length(), CMARK_OPT_NOBREAKS | CMARK_OPT_UNSAFE);
 
@@ -28,4 +29,7 @@ QString markdownToHTML(const QString& markdown)
     free(buffer);
 
     return htmlStr;
+#else
+    return markdown.toHtmlEscaped();
+#endif
 }

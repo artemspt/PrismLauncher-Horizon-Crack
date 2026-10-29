@@ -317,7 +317,10 @@ if(Launcher_QT_VERSION_MAJOR EQUAL 6)
     set(QT_LIBEXECS_DIR ${QT${QT_VERSION_MAJOR}_INSTALL_PREFIX}/${QT${QT_VERSION_MAJOR}_INSTALL_LIBEXECS})
 endif()
 
-find_package(cmark REQUIRED)
+find_package(cmark)
+if(TARGET cmark::cmark)
+    add_compile_definitions(HAVE_CMARK)
+endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     find_package(PkgConfig REQUIRED)

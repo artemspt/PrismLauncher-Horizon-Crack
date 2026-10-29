@@ -1387,10 +1387,13 @@ target_link_libraries(Launcher_logic
     ${Launcher_QT_LIBS}
 )
 target_link_libraries(Launcher_logic
-    cmark::cmark
     LocalPeer
     Launcher_rainbow
 )
+if (TARGET cmark::cmark)
+    target_link_libraries(Launcher_logic cmark::cmark)
+endif()
+
 if (TARGET ${Launcher_QT_DBUS})
     add_compile_definitions(WITH_QTDBUS)
 endif()
@@ -1467,8 +1470,10 @@ if(Launcher_BUILD_UPDATER)
         Qt${QT_VERSION_MAJOR}::Core
         Qt${QT_VERSION_MAJOR}::Network
         ${Launcher_QT_LIBS}
-        cmark::cmark
     )
+    if (TARGET cmark::cmark)
+        target_link_libraries(prism_updater_logic cmark::cmark)
+    endif()
     if(TARGET PkgConfig::libarchive)
         target_link_libraries(prism_updater_logic PkgConfig::libarchive)
     else()
